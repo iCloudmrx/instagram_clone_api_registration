@@ -111,7 +111,7 @@ class User(AbstractUser, BaseModel):
 
 
 
-EMAIL_EXOIRE=5
+EMAIL_EXOIRE=2
 PHOTO_EXPIRE=2
 
 
@@ -134,9 +134,9 @@ class UserConfirmation(BaseModel):
         return str(self.user.__str__())
 
     def save(self, *args, **kwargs):
-        if not self.pk:
+        if self.pk:
             if self.verify_type==VIA_EMAIL:
-                self.expiration_time= datetime.now + timedelta(minutes=EMAIL_EXOIRE)
+                self.expiration_time= datetime.now() + timedelta(minutes=EMAIL_EXOIRE)
             else:
-                self.expiration_time = datetime.now + timedelta(minutes=PHOTO_EXPIRE)
+                self.expiration_time = datetime.now() + timedelta(minutes=PHOTO_EXPIRE)
         super(UserConfirmation,self).save(*args,**kwargs)
