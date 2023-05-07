@@ -1,15 +1,19 @@
 from datetime import datetime
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from rest_framework import permissions
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from shared.utility import send_mail, send_phone_number
-from .serializers import SignUpSerializer,ChangeUserInformation,ChangeUserPhotoSerializer,LoginSerializer,LoginRefreshSerializer
+from shared.utility import send_mail, send_phone_number, check_email_or_phone
+from .serializers import SignUpSerializer, ChangeUserInformation, ChangeUserPhotoSerializer, LoginSerializer, \
+    LoginRefreshSerializer, LogoutSerializer,ForgetPasswordSerializer,ResetPasswordSerializer
 from .models import User, DONE, CODE_VERIFIED, NEW, VIA_EMAIL, VIA_PHONE
 from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.decorators import permission_classes
@@ -157,3 +161,77 @@ class LoginView(TokenObtainPairView):
 
 class LoginRefreshView(TokenRefreshView):
     serializer_class =LoginRefreshSerializer
+
+class LogOutAPIView(APIView):
+    serializer_class=LogoutSerializer
+    permission_classes = [IsAuthenticated,]
+
+    def post(self,request,*args,**kwargs):
+        serializer=self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            refresh_token=self.request.data['refresh']
+            token=RefreshToken(refresh_token)
+            token.blacklist()
+            data={
+                'success':True,
+                'message':"You are loggout out"
+            }
+            return Response(data,status=205)
+        except TokenError:
+            return Response(status=400)
+
+
+class ForgotPasswordAPIView(APIView):
+    permission_classes = [AllowAny,]
+    serializer_class=ForgetPasswordSerializer
+
+    def post(self,request,*args,**kwargs):
+        serializer=self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        email_or_phone=serializer.validated_data.get('email_or_phone')
+        user=serializer.validated_data.get('user')
+        if check_email_or_phone(email_or_phone)=='phone':
+            code=user.create_verify_code(VIA_PHONE)
+            send_mail(email_or_phone,code)
+            # bizda telefon raqam bo'lmagan uchun emailda jo'natib turamiz
+            #send_phone_number(email_or_phone,code)
+        elif check_email_or_phone(email_or_phone)=='email':
+            code=user.create_verify_code(VIA_EMAIL)
+            send_mail(email_or_phone,code)
+        else:
+            return Response(status=500)
+        return Response(
+            {
+                'success':True,
+                'message':"Tasdiqlash kodningiz muvaffaqiyatli yuborildi",
+                'access':user.token()['access'],
+                'refresh':user.token()['refresh'],
+                'auth_status':user.auth_status
+            },
+            status=200
+        )
+
+
+class ResetPasswordUpdateAPIView(UpdateAPIView):
+    serializer_class = ResetPasswordSerializer
+    permission_classes = [IsAuthenticated,]
+    http_method_names = ['patch','put']
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        respone=super(ResetPasswordUpdateAPIView,self).update(request,*args,**kwargs)
+        try:
+            user=User.objects.get(id=respone.data.get('id'))
+        except ObjectDoesNotExist as err:
+            raise  NotFound(detail="Foydalanuvchi topilmadi")
+        return Response({
+            'success':True,
+            'message':"Parol muvaqiyatli o'zgartirildi",
+            'access': user.token()['access'],
+            'refresh': user.token()['refresh'],
+        },
+        status=201
+        )
