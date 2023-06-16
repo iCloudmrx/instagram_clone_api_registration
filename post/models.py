@@ -45,7 +45,8 @@ class PostLike(BaseModel):
     class Meta:
         constraints=[
             UniqueConstraint(
-                fields=['author', 'post']
+                fields=['author', 'post'],
+                name='postLikeUnique'
             )
         ]
 class CommentLike(BaseModel):
@@ -55,6 +56,7 @@ class CommentLike(BaseModel):
     class Meta:
         constraints=[
             UniqueConstraint(
-                fields=['author', 'comment']
+                fields=['author', 'comment'],
+                name='commentLikeUnique'
             )
         ]
