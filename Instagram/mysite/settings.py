@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     # localapp
     'users',
     'shared',
-    'post'
+    'post',
+    'chats'
 ]
 
 MIDDLEWARE = [

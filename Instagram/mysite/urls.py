@@ -38,6 +38,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('user/', include('users.urls')),
     path('post/', include('post.urls')),
+    path('chat/', include('chats.urls')),
 
     #swagger
     path('swagger/', schema_view.with_ui(
