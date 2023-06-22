@@ -33,8 +33,8 @@ class PostRetrieveUpdateDestoryAPI(RetrieveUpdateDestroyAPIView):
     serializer_class = PostSerializer
 
     def put(self, request, *args, **kwargs):
-        post=self.get_object()
-        serializer=self.serializer_class(post, data=request.data)
+        post = self.get_object()
+        serializer = self.serializer_class(post, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
