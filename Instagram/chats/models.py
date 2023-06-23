@@ -11,7 +11,6 @@ class ChatRoom(BaseModel):
         MinLengthValidator(1),
         MaxLengthValidator(4000)
     ])
-    is_active = models.BooleanField(default=False, null=True, blank=True)
 
     def __str__(self):
         return self.message

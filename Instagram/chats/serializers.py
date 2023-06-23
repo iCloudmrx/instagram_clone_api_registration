@@ -1,3 +1,4 @@
+from django.core.validators import MinLengthValidator, MaxLengthValidator
 from rest_framework import serializers
 from . import models
 
@@ -16,8 +17,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     receiver = UserSerializer(read_only=True)
     created = serializers.DateTimeField(read_only=True)
-    is_active = serializers.BooleanField(write_only=True)
 
     class Meta:
         model = models.ChatRoom
-        fields = ['id', 'sender', 'receiver', 'message', 'is_active', 'created', 'updated']
+        fields = ['id', 'sender', 'receiver', 'message', 'created', 'updated']
